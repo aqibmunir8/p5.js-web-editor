@@ -431,14 +431,13 @@ export function deleteProject(id) {
       });
 }
 export function changeVisibility(projectId, projectName, visibility, t) {
-  return (dispatch, getState) => {
-    const state = getState();
-
+  return (dispatch, getState) =>
     apiClient
       .patch('/project/visibility', { projectId, visibility })
       .then((response) => {
         if (response.status === 200) {
-          const { visibility: newVisibility, updatedAt, id } = response.data;
+          const { visibility: newVisibility, updatedAt } = response.data;
+          const id = response.data.id || response.data._id || projectId;
 
           dispatch({
             type: ActionTypes.CHANGE_VISIBILITY,
@@ -448,7 +447,10 @@ export function changeVisibility(projectId, projectName, visibility, t) {
             }
           });
 
-          if (state.project.id === response.data.id) {
+          const currentProject = getState().project;
+          const currentProjectId = currentProject?.id || currentProject?._id;
+
+          if (currentProjectId === id || currentProjectId === projectId) {
             dispatch({
               type: ActionTypes.SET_PROJECT_VISIBILITY,
               visibility: newVisibility,
@@ -457,7 +459,7 @@ export function changeVisibility(projectId, projectName, visibility, t) {
 
             dispatch({
               type: ActionTypes.SET_PROJECT_NAME,
-              name: response.data.name
+              name: response.data.name || projectName
             });
 
             let visibilityLabel;
@@ -489,5 +491,4 @@ export function changeVisibility(projectId, projectName, visibility, t) {
           error: error?.response?.data
         });
       });
-  };
 }

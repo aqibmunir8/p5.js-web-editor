@@ -146,4 +146,127 @@ describe('saveProject', () => {
       );
     });
   });
+
+  describe('changeVisibility', () => {
+    it('dispatches SET_PROJECT_VISIBILITY when response contains _id instead of id', async () => {
+      store = mockStore(existingProjectState);
+      jest.spyOn(apiClient, 'patch').mockResolvedValueOnce({
+        status: 200,
+        data: {
+          _id: 'project123',
+          name: 'Zealous sunflower',
+          visibility: 'Private',
+          updatedAt: '2026-03-01T00:00:00Z'
+        }
+      });
+
+      await store.dispatch(
+        ProjectActions.changeVisibility(
+          'project123',
+          'Zealous sunflower',
+          'Private',
+          (key) => key
+        )
+      );
+
+      const actions = store.getActions();
+      expect(actions).toContainEqual({
+        type: ActionTypes.SET_PROJECT_VISIBILITY,
+        visibility: 'Private',
+        updatedAt: '2026-03-01T00:00:00Z'
+      });
+      expect(actions).toContainEqual({
+        type: ActionTypes.SET_PROJECT_NAME,
+        name: 'Zealous sunflower'
+      });
+      expect(actions).toContainEqual({
+        type: ActionTypes.SHOW_TOAST
+      });
+    });
+
+    it('dispatches SET_PROJECT_VISIBILITY when response contains id', async () => {
+      store = mockStore(existingProjectState);
+      jest.spyOn(apiClient, 'patch').mockResolvedValueOnce({
+        status: 200,
+        data: {
+          id: 'project123',
+          name: 'Zealous sunflower',
+          visibility: 'Public',
+          updatedAt: '2026-03-01T00:00:00Z'
+        }
+      });
+
+      await store.dispatch(
+        ProjectActions.changeVisibility(
+          'project123',
+          'Zealous sunflower',
+          'Public',
+          (key) => key
+        )
+      );
+
+      const actions = store.getActions();
+      expect(actions).toContainEqual({
+        type: ActionTypes.SET_PROJECT_VISIBILITY,
+        visibility: 'Public',
+        updatedAt: '2026-03-01T00:00:00Z'
+      });
+    });
+
+    it('does not dispatch SET_PROJECT_VISIBILITY for a different project', async () => {
+      store = mockStore(existingProjectState);
+      jest.spyOn(apiClient, 'patch').mockResolvedValueOnce({
+        status: 200,
+        data: {
+          id: 'other-project',
+          name: 'Other Sketch',
+          visibility: 'Private',
+          updatedAt: '2026-03-01T00:00:00Z'
+        }
+      });
+
+      await store.dispatch(
+        ProjectActions.changeVisibility(
+          'other-project',
+          'Other Sketch',
+          'Private',
+          (key) => key
+        )
+      );
+
+      const actions = store.getActions();
+      expect(actions).toContainEqual({
+        type: ActionTypes.CHANGE_VISIBILITY,
+        payload: {
+          id: 'other-project',
+          visibility: 'Private'
+        }
+      });
+      expect(actions).not.toContainEqual(
+        expect.objectContaining({ type: ActionTypes.SET_PROJECT_VISIBILITY })
+      );
+    });
+
+    it('dispatches ERROR on failure', async () => {
+      store = mockStore(existingProjectState);
+      jest
+        .spyOn(apiClient, 'patch')
+        .mockRejectedValueOnce(httpError(500, { message: 'Server error' }));
+
+      await store.dispatch(
+        ProjectActions.changeVisibility(
+          'project123',
+          'Zealous sunflower',
+          'Private',
+          (key) => key
+        )
+      );
+
+      const actions = store.getActions();
+      expect(actions).toContainEqual({
+        type: ActionTypes.ERROR,
+        error: { message: 'Server error' }
+      });
+    });
+  });
 });

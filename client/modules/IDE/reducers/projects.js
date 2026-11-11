@@ -4,10 +4,26 @@ const sketches = (state = [], action) => {
   switch (action.type) {
     case ActionTypes.SET_PROJECTS:
       return action.projects;
-    case ActionTypes.DELETE_PROJECT:
-      return state.projects.filter((sketch) => sketch.id !== action.id);
+    case ActionTypes.DELETE_PROJECT: {
+      if (Array.isArray(state)) {
+        return state.filter((sketch) => sketch.id !== action.id);
+      }
+      return {
+        ...state,
+        projects: (state.projects || []).filter(
+          (sketch) => sketch.id !== action.id
+        )
+      };
+    }
     case ActionTypes.CHANGE_VISIBILITY: {
-      const updatedProjects = state.projects.map((sketch) =>
+      if (Array.isArray(state)) {
+        return state.map((sketch) =>
+          sketch.id === action.payload.id
+            ? { ...sketch, visibility: action.payload.visibility }
+            : sketch
+        );
+      }
+      const updatedProjects = (state.projects || []).map((sketch) =>
         sketch.id === action.payload.id
           ? { ...sketch, visibility: action.payload.visibility }
           : sketch
@@ -20,7 +36,15 @@ const sketches = (state = [], action) => {
     }
 
     case ActionTypes.RENAME_PROJECT: {
-      const updatedproject = state.projects.map((sketch) => {
+      if (Array.isArray(state)) {
+        return state.map((sketch) => {
+          if (sketch.id === action.payload.id) {
+            return { ...sketch, name: action.payload.name };
+          }
+          return sketch;
+        });
+      }
+      const updatedproject = (state.projects || []).map((sketch) => {
         if (sketch.id === action.payload.id) {
           return { ...sketch, name: action.payload.name };
         }
